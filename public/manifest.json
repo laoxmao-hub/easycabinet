@@ -1,0 +1,36 @@
+{
+  "name": "Hệ Thống DRACO-X2",
+  "short_name": "DRACO-X2",
+  "description": "Hệ Thống Quản Lý & QC Sản Xuất Hàng Chờ Chuyên Nghiệp",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#4f46e5",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "https://res.cloudinary.com/dj7w4kp5m/image/upload/v1782285783/logo_app_va9ksb.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "https://res.cloudinary.com/dj7w4kp5m/image/upload/v1782285783/logo_app_va9ksb.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "https://res.cloudinary.com/dj7w4kp5m/image/upload/v1782285783/logo_app_va9ksb.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "https://res.cloudinary.com/dj7w4kp5m/image/upload/v1782285783/logo_app_va9ksb.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

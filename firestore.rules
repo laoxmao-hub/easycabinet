@@ -1,0 +1,381 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Phase 3: Primitives
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function hasUserRole(r) {
+      return exists(/databases/$(database)/documents/users/$(request.auth.uid)) && (
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('role', '') == r || (
+          'roles' in get(/databases/$(database)/documents/users/$(request.auth.uid)).data.keys() &&
+          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('roles', []) is list &&
+          r in get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('roles', [])
+        )
+      );
+    }
+
+    function isAdmin() {
+      return isSignedIn() && (
+        request.auth.token.email == 'nguyenkimqza@gmail.com' || 
+        hasUserRole('admin')
+      );
+    }
+
+    function isMod() {
+      return isSignedIn() && (
+        hasUserRole('mod') || hasUserRole('mod_x1') || hasUserRole('mod_x2')
+      );
+    }
+
+    function isManager() {
+      return isSignedIn() && hasUserRole('manager');
+    }
+
+    function isQC() {
+      return isSignedIn() && (
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
+         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('chuc_danh', '') == 'QC') ||
+        hasUserRole('qc') || 
+        hasUserRole('mod_qc')
+      );
+    }
+
+    function isDGLeader() {
+      return isSignedIn() && (
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('chuc_danh', '') == 'ĐG Leader'
+      );
+    }
+
+    function isPrivileged() {
+      return isAdmin() || isMod() || hasUserRole('mod_qc');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    // Phase 4: Validation Helpers
+    
+    function isValidItem(data) {
+      return data.keys().hasAll(['name', 'quantity', 'ownerId', 'createdAt', 'updatedAt'])
+        && data.keys().size() <= 12
+        && data.name is string && data.name.size() > 0 && data.name.size() <= 500
+        && (data.sku == null || (data.sku is string && data.sku.size() <= 200))
+        && (data.category == null || (data.category is string && data.category.size() <= 200))
+        && (data.price == null || data.price is number)
+        && data.quantity is number && data.quantity >= 0
+        && (data.imageUrl == null || (data.imageUrl is string && data.imageUrl.size() <= 1000))
+        && data.ownerId == request.auth.uid
+        && data.createdAt == request.time
+        && data.updatedAt == request.time;
+    }
+
+    function isValidUser(data, userId) {
+      return data.keys().hasAll(['displayName', 'email', 'createdAt', 'role', 'ten_that', 'chuc_danh', 'uid'])
+        && data.keys().size() <= 15
+        && data.displayName is string && data.displayName.size() <= 500
+        && data.email is string && data.email.size() <= 500
+        && data.uid is string && data.uid == userId
+        && (data.photoURL == null || (data.photoURL is string && data.photoURL.size() <= 1000))
+        && data.chuc_danh is string && data.chuc_danh.size() <= 500
+        && data.ten_that is string && data.ten_that.size() <= 500
+        && data.role is string && data.role in ['admin', 'mod', 'viewer', 'pending', 'member', 'mod_x1', 'mod_x2', 'mod_qc', 'qc']
+        && (!('roles' in data.keys()) || (data.roles is list && data.roles.size() <= 20))
+        && data.createdAt is timestamp
+        && (data.lastActive == null || data.lastActive is timestamp);
+    }
+
+    function isValidProject(data) {
+      return data.keys().hasAll(['projectName', 'projectCode', 'cluster', 'moduleCode', 'quantity', 'ownerId', 'createdAt'])
+        && data.keys().size() <= 30
+        && data.projectName is string && data.projectName.size() > 0 && data.projectName.size() <= 500
+        && data.projectCode is string && data.projectCode.size() > 0 && data.projectCode.size() <= 200
+        && data.cluster is string && data.cluster.size() <= 500
+        && data.moduleCode is string && data.moduleCode.size() > 0 && data.moduleCode.size() <= 200
+        && data.quantity is number
+        && (data.status == null || (data.status is string && data.status.size() <= 500))
+        && (data.qcStatus == null || (data.qcStatus is string && data.qcStatus in ['pass', 'fail', 'pending', 'none', '']))
+        && (data.qcRole == null || (data.qcRole is string && data.qcRole.size() <= 500))
+        && (data.drawingUrl == null || (data.drawingUrl is string && data.drawingUrl.size() <= 1000))
+        && (data.assemblyDrawingUrl == null || (data.assemblyDrawingUrl is string && data.assemblyDrawingUrl.size() <= 1000))
+        && (data.glbUrl == null || (data.glbUrl is string && data.glbUrl.size() <= 1000))
+        && (data.qcNotes == null || (data.qcNotes is string && data.qcNotes.size() <= 5000))
+        && (data.qcBy == null || (data.qcBy is string && data.qcBy.size() <= 500))
+        && (data.qcPass == null || data.qcPass is bool)
+        && (data.qcDate == null || data.qcDate is timestamp)
+        && (data.pWidth == null || data.pWidth is number)
+        && (data.pDepth == null || data.pDepth is number)
+        && (data.pHeight == null || data.pHeight is number)
+        && (data.statusHistory == null || (data.statusHistory is list && data.statusHistory.size() <= 100))
+        && (data.accessories == null || (data.accessories is list && data.accessories.size() <= 100))
+        && (data.qcPhotos == null || (data.qcPhotos is list && data.qcPhotos.size() <= 100))
+        && (data.qcWhite == null || data.qcWhite is map)
+        && (data.qcPaint == null || data.qcPaint is map)
+        && (data.qcFinish == null || data.qcFinish is map)
+        && (data.qcPack == null || data.qcPack is map)
+        && (data.qcCustomer == null || data.qcCustomer is map)
+        && data.ownerId is string
+        && data.createdAt is timestamp;
+    }
+
+    function isValidActivity(data) {
+      return data.keys().hasAll(['userName', 'userEmail', 'action', 'details', 'timestamp'])
+        && data.keys().size() <= 11
+        && data.userName is string && data.userName.size() <= 500
+        && data.userEmail is string && data.userEmail.size() <= 500
+        && data.action is string && data.action.size() <= 500
+        && data.details is string && data.details.size() <= 2000
+        && data.timestamp == request.time;
+    }
+
+    function isValidNotification(data) {
+      return data.keys().hasAll(['title', 'content', 'type', 'createdAt'])
+        && data.keys().size() <= 15
+        && data.title is string && data.title.size() <= 550
+        && data.content is string && data.content.size() <= 2500
+        && data.type is string && data.type.size() <= 100
+        && data.createdAt == request.time
+        && (!('targetUsers' in data.keys()) || data.targetUsers == null || (data.targetUsers is list && data.targetUsers.size() <= 200))
+        && (!('targetRoles' in data.keys()) || data.targetRoles == null || (data.targetRoles is list && data.targetRoles.size() <= 50))
+        && (!('readBy' in data.keys()) || data.readBy == null || (data.readBy is list && data.readBy.size() <= 500))
+        && (!('linkTo' in data.keys()) || data.linkTo == null || (data.linkTo is string && data.linkTo.size() <= 1000));
+    }
+
+    // Collection: items
+    match /items/{itemId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+      allow create: if isMod() && isValidItem(incoming());
+      allow update: if isMod() && isValidItem(incoming()) && (
+          incoming().diff(existing()).affectedKeys().hasOnly(['name', 'quantity', 'sku', 'category', 'price', 'imageUrl', 'updatedAt'])
+          && incoming().ownerId == existing().ownerId
+          && incoming().createdAt == existing().createdAt
+      );
+      allow delete: if isMod();
+    }
+
+    // Collection: projects
+    match /projects/{projectId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+      allow create: if isPrivileged() && isValidProject(incoming()) && (
+        incoming().ownerId == request.auth.uid &&
+        incoming().createdAt == request.time
+      );
+      allow update: if isSignedIn() && isValidProject(incoming()) && (
+        incoming().ownerId == existing().ownerId
+        && incoming().createdAt == existing().createdAt
+        && (
+          // Action: Customer QC updates
+          (incoming().diff(existing()).affectedKeys().hasOnly(['qcCustomer'])) ||
+          // Action: Edit info
+          (isPrivileged() && incoming().diff(existing()).affectedKeys().hasOnly(['projectName', 'cluster', 'moduleCode', 'quantity', 'accessories', 'drawingUrl', 'assemblyDrawingUrl', 'glbUrl', 'qcNotes', 'pWidth', 'pDepth', 'pHeight', 'qcStatus', 'qcWhite', 'qcPaint', 'qcFinish', 'qcPack'])) ||
+          // Action: Update status / QC Result
+          ((isPrivileged() || isQC()) && incoming().diff(existing()).affectedKeys().hasOnly(['status', 'statusHistory', 'qcPass', 'qcDate', 'qcBy', 'qcStatus', 'qcNotes', 'qcPhotos', 'qcRole', 'qcWhite', 'qcPaint', 'qcFinish', 'qcPack']))
+        )
+      );
+      allow delete: if isPrivileged();
+    }
+
+    function isValidShippingOrder(data) {
+      return data.keys().hasAll(['type', 'projectCode', 'items', 'createdAt', 'createdBy', 'userName'])
+        && data.keys().size() <= 10
+        && data.type in ['receive', 'ship']
+        && data.projectCode is string
+        && data.items is list
+        && data.createdAt == request.time
+        && data.createdBy == request.auth.uid;
+    }
+
+    // Collection: users
+    match /users/{userId} {
+      allow get: if isSignedIn() && (isOwner(userId) || isPrivileged());
+      allow list: if isSignedIn() && isPrivileged();
+      allow delete: if isAdmin();
+      
+      allow create: if isOwner(userId)
+        && isValidUser(incoming(), userId)
+        && (isAdmin() || incoming().email == 'nguyenkimqza@gmail.com' || (
+             incoming().createdAt == request.time
+             && incoming().role == 'pending'
+           ));
+
+      allow update: if (isOwner(userId) || isAdmin()) && (
+             // Cho phép partial update lastActive mà không cần validate toàn bộ
+             incoming().diff(existing()).affectedKeys().hasOnly(['lastActive'])
+             || (
+               isValidUser(incoming(), userId)
+               && (isAdmin() || (
+                    incoming().diff(existing()).affectedKeys().hasOnly(['displayName', 'photoURL', 'email', 'chuc_danh', 'ten_that', 'lastActive'])
+                    && incoming().createdAt == existing().createdAt
+                    && (existing().get('role', 'pending') == incoming().role)
+                  ))
+             ));
+    }
+
+    // Collection: shipping_orders
+    match /shipping_orders/{orderId} {
+      allow read: if isSignedIn();
+      allow create: if isPrivileged() && isValidShippingOrder(incoming());
+      allow update, delete: if isAdmin();
+    }
+
+    // Collection: packing
+    match /packing/{packingId} {
+      allow read: if isSignedIn();
+      allow create: if isPrivileged();
+      allow update: if isPrivileged() || isDGLeader();
+      allow delete: if isAdmin();
+    }
+
+    // Collection: loading
+    match /loading/{listId} {
+      allow read: if isSignedIn();
+      allow create: if isPrivileged();
+      allow update: if isPrivileged() || isDGLeader();
+      allow delete: if isAdmin();
+    }
+
+    // Collection: loading_histories
+    match /loading_histories/{historyId} {
+      allow read: if isSignedIn();
+      allow create: if isPrivileged() || isDGLeader();
+      allow update: if isPrivileged() || isDGLeader();
+      allow delete: if isAdmin();
+    }
+
+    // Collection: activities
+    match /activities/{activityId} {
+      allow read: if isSignedIn() && isPrivileged();
+      allow create: if isSignedIn() && isValidActivity(incoming());
+      allow update, delete: if isAdmin();
+    }
+
+    // Collection: configs (Optional global settings)
+    match /configs/{configId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+
+    // Collection: qc_tickets
+    match /qc_tickets/{ticketId} {
+      allow read, create, update: if isSignedIn();
+      allow delete: if isAdmin() || isPrivileged();
+    }
+
+    // Collection: customer_qc_tickets
+    match /customer_qc_tickets/{ticketId} {
+      allow read, create, update: if isSignedIn();
+      allow delete: if isAdmin() || isPrivileged();
+    }
+
+    // Collection: quick_scan_lists
+    match /quick_scan_lists/{listId} {
+      allow read, create, update, delete: if isSignedIn();
+    }
+
+    // Collection: notifications
+    match /notifications/{notificationId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && isValidNotification(incoming());
+      allow update: if isSignedIn() && isValidNotification(incoming()) && (
+        incoming().diff(existing()).affectedKeys().hasOnly(['readBy'])
+      );
+      allow delete: if isAdmin() || isPrivileged();
+    }
+
+    // Collection: materials
+    match /materials/{materialId} {
+      allow read: if isSignedIn();
+      allow write: if isSignedIn();
+    }
+
+    // Collection: stockTransactions
+    match /stockTransactions/{txId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn();
+      allow update, delete: if false;
+    }
+
+    // Collection: stockReceipts
+    match /stockReceipts/{receiptId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn();
+      allow update, delete: if isAdmin() || isPrivileged();
+    }
+
+    // Collection: stockIssues
+    match /stockIssues/{issueId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn();
+      allow update, delete: if isAdmin() || isPrivileged();
+    }
+
+    // Collection: stockRequests
+    match /stockRequests/{requestId} {
+      allow read: if isSignedIn();
+      allow create, update: if isSignedIn();
+      allow delete: if isAdmin() || isPrivileged();
+    }
+
+    // Collection: print_jobs
+    match /print_jobs/{jobId} {
+      allow read, create, update, delete: if isSignedIn();
+    }
+
+    // Collection: saved_labels
+    match /saved_labels/{labelId} {
+      allow read, create, update, delete: if isSignedIn();
+    }
+
+    // Collection: projectConfigs
+    match /projectConfigs/{configId} {
+      allow read: if isSignedIn();
+      allow create: if isPrivileged();
+      allow update: if isPrivileged() || (
+        isSignedIn() &&
+        incoming().diff(existing()).affectedKeys().hasOnly(['_lastModuleUpdate'])
+      );
+      allow delete: if isAdmin();
+
+      // Subcollection: modules
+      match /modules/{moduleId} {
+        allow read: if isSignedIn();
+        allow create: if isPrivileged();
+        allow update: if isSignedIn();
+        allow delete: if isPrivileged();
+      }
+    }
+
+    // Collection: tasks
+    match /tasks/{taskId} {
+      allow read, create, update, delete: if isSignedIn();
+    }
+
+    // Collection: calendar_notes
+    match /calendar_notes/{noteId} {
+      allow read, create, update, delete: if isSignedIn();
+    }
+
+    // Global Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
+

@@ -1,0 +1,6 @@
+{
+  "name": "DRACO-X2",
+  "description": "DRACO-X2: Hệ thống quản lý sản xuất, kiểm tra chất lượng (QC) và điều phối giao nhận module nội thất chuyên nghiệp.",
+  "requestFramePermissions": ["camera"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

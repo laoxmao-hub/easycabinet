@@ -1,0 +1,374 @@
+{
+  "entities": {
+    "Item": {
+      "title": "Stock Item",
+      "description": "An item in the inventory",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "description": "Name of the item" },
+        "sku": { "type": "string", "description": "Stock Keeping Unit / Barcode" },
+        "category": { "type": "string", "description": "Category of the item" },
+        "price": { "type": "number", "description": "Unit price" },
+        "quantity": { "type": "number", "description": "Current quantity in stock" },
+        "imageUrl": { "type": "string", "description": "Cloudinary image URL" },
+        "ownerId": { "type": "string", "description": "UID of the user who owns this item" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "quantity", "ownerId", "createdAt", "updatedAt"]
+    },
+    "User": {
+      "title": "User Profile",
+      "description": "User profile information",
+      "type": "object",
+      "properties": {
+        "displayName": { "type": "string" },
+        "email": { "type": "string" },
+        "photoURL": { "type": "string" },
+        "chuc_danh": { "type": "string", "description": "Chức danh của người dùng" },
+        "ten_that": { "type": "string", "description": "Tên thật của người dùng" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["displayName", "email", "createdAt"]
+    },
+    "Project": {
+      "title": "Project Entry",
+      "description": "An entry in a project imported from Excel",
+      "type": "object",
+      "properties": {
+        "projectName": { "type": "string", "description": "Tên Dự Án" },
+        "projectCode": { "type": "string", "description": "Mã Dự Án" },
+        "cluster": { "type": "string", "description": "Cụm" },
+        "moduleCode": { "type": "string", "description": "Module" },
+        "quantity": { "type": "number", "description": "Số Lượng" },
+        "accessories": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": { "type": "string" },
+              "quantity": { "type": "number" }
+            }
+          }
+        },
+        "status": { "type": "string" },
+        "statusHistory": { "type": "array", "items": { "type": "string" } },
+        "qcWhite": { "type": "object" },
+        "qcPaint": { "type": "object" },
+        "qcFinish": { "type": "object" },
+        "qcPack": { "type": "object" },
+        "ownerId": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "sortIndex": { "type": "number" }
+      },
+      "required": ["projectName", "projectCode", "cluster", "moduleCode", "quantity", "ownerId", "createdAt"]
+    },
+    "Activity": {
+      "title": "Activity Log",
+      "description": "Log of user activities",
+      "type": "object",
+      "properties": {
+        "userName": { "type": "string" },
+        "userEmail": { "type": "string" },
+        "action": { "type": "string" },
+        "details": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" },
+        "projectCode": { "type": "string" },
+        "moduleCode": { "type": "string" }
+      },
+      "required": ["userName", "userEmail", "action", "details", "timestamp"]
+    },
+    "QCTicket": {
+      "title": "QC Ticket",
+      "description": "A ticket for QC inspection including multiple modules",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "description": "Tên phiếu chờ kiểm" },
+        "projectCode": { "type": "string", "description": "Mã dự án tham chiếu" },
+        "stage": { "type": "string", "description": "Công đoạn kiểm (white, paint, finish, pack)" },
+        "createdBy": { "type": "string", "description": "Người tạo phiếu" },
+        "createdByEmail": { "type": "string", "description": "Email người tạo" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "status": { "type": "string", "description": "Trạng thái phiếu (pending, completed)" },
+        "modules": { "type": "array" },
+        "ownerId": { "type": "string" }
+      },
+      "required": ["name", "projectCode", "stage", "createdBy", "createdAt", "status", "modules"]
+    },
+    "Packing": {
+      "title": "Packing List",
+      "description": "A list of items to be packed",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string", "description": "Title of the packing list or Project Name" },
+        "projectCode": { "type": "string", "description": "Reference project code if applicable" },
+        "items": { 
+          "type": "array", 
+          "items": { "type": "object", "properties": { "name": { "type": "string" }, "quantity": { "type": "number" }, "packed": { "type": "boolean" } } } 
+        },
+        "isCompleted": { "type": "boolean" },
+        "ownerId": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["title", "items", "ownerId", "createdAt"]
+    },
+    "QuickScanList": {
+      "title": "Quick Scan List",
+      "description": "A list of quickly scanned QR items for cross-reference comparison",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string", "description": "Tên danh sách quét" },
+        "codes": { 
+          "type": "array", 
+          "items": { "type": "string" }
+        },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "createdBy": { "type": "string" },
+        "createdByEmail": { "type": "string" }
+      },
+      "required": ["title", "codes", "createdAt", "createdBy", "createdByEmail"]
+    },
+    "Notification": {
+      "title": "Business Notification",
+      "description": "Real-time automated notification based on manufacturing and QC flows",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string", "description": "Tiêu đề thông báo" },
+        "content": { "type": "string", "description": "Nội dung chi tiết thông báo" },
+        "type": { "type": "string", "description": "Phân loại thông báo (delivery, qc, mention)" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "targetUsers": { "type": "array", "items": { "type": "string" }, "description": "Danh sách UID những người nhận đích danh" },
+        "targetRoles": { "type": "array", "items": { "type": "string" }, "description": "Danh sách các Vai trò hoặc Chức danh nhận thông báo" },
+        "readBy": { "type": "array", "items": { "type": "string" }, "description": "Danh sách UID những người đã đọc thông báo này" },
+        "linkTo": { "type": "string", "description": "Đường dẫn deep-link chuyển hướng khi click" }
+      },
+      "required": ["title", "content", "type", "createdAt"]
+    },
+    "PackingList": {
+      "title": "PKL Order",
+      "description": "Packing List (PKL) for custom truck/vehicle loading",
+      "type": "object",
+      "properties": {
+        "pklCode": { "type": "string" },
+        "projectId": { "type": "string" },
+        "projectName": { "type": "string" },
+        "vehicleInfo": { "type": "string" },
+        "driverName": { "type": "string" },
+        "note": { "type": "string" },
+        "status": { "type": "string" },
+        "createdBy": { "type": "string" },
+        "createdByEmail": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "packageIds": { "type": "array", "items": { "type": "string" } },
+        "overallImages": { "type": "array", "items": { "type": "string" } }
+      },
+      "required": ["pklCode", "projectId", "status", "createdBy", "createdAt"]
+    },
+    "LoadingHistory": {
+      "title": "Loading History",
+      "description": "History of loaded packages into the PKL vehicle",
+      "type": "object",
+      "properties": {
+        "packageId": { "type": "string" },
+        "pklId": { "type": "string" },
+        "pklCode": { "type": "string" },
+        "loadedBy": { "type": "string" },
+        "loadedAt": { "type": "string", "format": "date-time" },
+        "verificationImages": { "type": "array", "items": { "type": "string" } }
+      },
+      "required": ["packageId", "pklId", "loadedBy", "loadedAt", "verificationImages"]
+    },
+    "Material": {
+      "title": "Material Item",
+      "description": "Trung tâm danh mục vật tư",
+      "type": "object",
+      "properties": {
+        "code": { "type": "string" },
+        "name": { "type": "string" },
+        "unit": { "type": "string" },
+        "category": { "type": "string" },
+        "currentStock": { "type": "number" },
+        "minStock": { "type": "number" },
+        "note": { "type": "string" },
+        "status": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["code", "name", "unit", "category", "currentStock", "createdAt"]
+    },
+    "StockTransaction": {
+      "title": "Stock Transaction",
+      "description": "Giao dịch biến động kho hàng",
+      "type": "object",
+      "properties": {
+        "materialId": { "type": "string" },
+        "type": { "type": "string" },
+        "quantity": { "type": "number" },
+        "stockBefore": { "type": "number" },
+        "stockAfter": { "type": "number" },
+        "projectId": { "type": "string" },
+        "createdBy": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["materialId", "type", "quantity", "stockBefore", "stockAfter", "createdBy", "createdAt"]
+    },
+    "StockReceipt": {
+      "title": "Stock Receipt",
+      "description": "Phiếu nhập kho hàng",
+      "type": "object",
+      "properties": {
+        "receiptCode": { "type": "string" },
+        "supplier": { "type": "string" },
+        "items": { "type": "array" },
+        "createdBy": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["receiptCode", "supplier", "items", "createdBy", "createdAt"]
+    },
+    "StockIssue": {
+      "title": "Stock Issue",
+      "description": "Phiếu xuất kho dự án",
+      "type": "object",
+      "properties": {
+        "issueCode": { "type": "string" },
+        "projectId": { "type": "string" },
+        "items": { "type": "array" },
+        "createdBy": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["issueCode", "projectId", "items", "createdBy", "createdAt"]
+    },
+    "StockRequest": {
+      "title": "Stock Request",
+      "description": "Yêu cầu xuất kho phụ kiện sản xuất",
+      "type": "object",
+      "properties": {
+        "projectId": { "type": "string" },
+        "status": { "type": "string" },
+        "items": { "type": "array" },
+        "requestedBy": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["projectId", "status", "items", "requestedBy", "createdAt"]
+    },
+    "PrintJob": {
+      "title": "Print Job Entry",
+      "description": "A print job created dynamically during truck loading",
+      "type": "object",
+      "properties": {
+        "pklId": { "type": "string" },
+        "pklCode": { "type": "string" },
+        "packageId": { "type": "string" },
+        "packageName": { "type": "string" },
+        "status": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "printedAt": { "type": "string", "format": "date-time" },
+        "payload": {
+          "type": "object",
+          "properties": {
+            "name": { "type": "string" },
+            "projectName": { "type": "string" },
+            "unit": { "type": "string" },
+            "area": { "type": "string" },
+            "cabinetType": { "type": "string" },
+            "w": { "type": "string" },
+            "d": { "type": "string" },
+            "h": { "type": "string" },
+            "weight": { "type": "string" },
+            "qrText": { "type": "string" },
+            "qrUrl": { "type": "string" }
+          }
+        }
+      },
+      "required": ["pklId", "packageId", "status", "createdAt"]
+    },
+    "SavedLabel": {
+      "title": "Saved Label Entry",
+      "description": "A temporarily saved label for printing alignment and preview",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "moduleId": { "type": "string" },
+        "moduleCode": { "type": "string" },
+        "projectName": { "type": "string" },
+        "displayProject": { "type": "string" },
+        "dimensions": { "type": "string" },
+        "sttValue": { "type": "string" },
+        "idx": { "type": "number" },
+        "totalQty": { "type": "number" },
+        "dataUrl": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "moduleId", "moduleCode", "projectName", "dimensions", "sttValue", "dataUrl", "createdAt"]
+    }
+  },
+  "firestore": {
+    "print_jobs": {
+      "schema": "PrintJob",
+      "description": "Collection of dynamic print jobs for box labels"
+    },
+    "projects": {
+      "schema": "Project",
+      "description": "Collection of project entries"
+    },
+    "items": {
+      "schema": "Item",
+      "description": "Collection of inventory items"
+    },
+    "activities": {
+      "schema": "Activity",
+      "description": "Collection of activity logs"
+    },
+    "users": {
+      "schema": "User",
+      "description": "Collection of user profiles"
+    },
+    "packing": {
+      "schema": "Packing",
+      "description": "Collection of packing lists"
+    },
+    "loading": {
+      "schema": "PackingList",
+      "description": "Collection of PKL loading sheets"
+    },
+    "loading_histories": {
+      "schema": "LoadingHistory",
+      "description": "Collection of loaded items validation details"
+    },
+    "qc_tickets": {
+      "schema": "QCTicket",
+      "description": "Collection of QC inspection tickets"
+    },
+    "quick_scan_lists": {
+      "schema": "QuickScanList",
+      "description": "Collection of quick scan lists for cross-reference"
+    },
+    "notifications": {
+      "schema": "Notification",
+      "description": "Collection of system-wide real-time business and user notifications"
+    },
+    "materials": {
+      "schema": "Material",
+      "description": "Trung tâm danh mục vật tư"
+    },
+    "stockTransactions": {
+      "schema": "StockTransaction",
+      "description": "Giao dịch biến động kho"
+    },
+    "stockReceipts": {
+      "schema": "StockReceipt",
+      "description": "Phiếu nhập kho"
+    },
+    "stockIssues": {
+      "schema": "StockIssue",
+      "description": "Phiếu xuất kho dự án"
+    },
+    "stockRequests": {
+      "schema": "StockRequest",
+      "description": "Yêu cầu xuất kho phụ kiện"
+    },
+    "saved_labels": {
+      "schema": "SavedLabel",
+      "description": "Collection of temporarily saved labels for quick printing across devices"
+    }
+  }
+}
